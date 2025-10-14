@@ -1,7 +1,8 @@
 # Google Docs Synchronisation
 
-The commit history is generated as `docs/commit-history.md`. To mirror the same
-content into a Google Docs document:
+The commit history is generated as `docs/commit-history.md`, a plain-language
+update log that summarises recent changes for non-technical readers. To mirror
+the same content into a Google Docs document:
 
 1. Create or reuse a Google Cloud project and enable the **Google Docs API**.
 2. Create a **service account** and download its JSON key file.

@@ -12,12 +12,23 @@ import datetime
 import subprocess
 import sys
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_DIR = REPO_ROOT / "docs"
 OUTPUT_FILE = DOCS_DIR / "commit-history.md"
+HUMAN_PREFIX_MAP: Dict[str, str] = {
+    "feat": "What's new:",
+    "fix": "Bug fix:",
+    "chore": "Housekeeping:",
+    "docs": "Documentation:",
+    "refactor": "Under the hood:",
+    "test": "Tests:",
+    "build": "Build:",
+    "ci": "CI:",
+    "style": "Style:",
+}
 
 
 def repo_has_commits() -> bool:
@@ -63,9 +74,24 @@ def fetch_commits() -> List[Tuple[str, str, str, str]]:
     return commits
 
 
-def normalise_cell(value: str) -> str:
-    """Escape pipe characters to keep the markdown table valid."""
-    return value.replace("|", "\\|").replace("\n", " ")
+def clean_text(value: str) -> str:
+    """Collapse whitespace so the text reads cleanly in Markdown."""
+    return " ".join(value.replace("\n", " ").split())
+
+
+def humanise_subject(subject: str) -> str:
+    """Turn conventional commit prefixes into friendlier phrases."""
+    text = clean_text(subject)
+    if not text:
+        return text
+
+    parts = text.split(":", 1)
+    if len(parts) == 2:
+        prefix, rest = parts[0].strip().lower(), parts[1].strip()
+        if prefix in HUMAN_PREFIX_MAP:
+            lead = HUMAN_PREFIX_MAP[prefix]
+            return f"{lead} {rest}"
+    return text[0].upper() + text[1:] if len(text) > 1 else text.upper()
 
 
 def render_markdown(commits: List[Tuple[str, str, str, str]]) -> str:
@@ -74,28 +100,31 @@ def render_markdown(commits: List[Tuple[str, str, str, str]]) -> str:
         "%Y-%m-%d %H:%M:%S UTC"
     )
     lines = [
-        "# Commit History",
+        "# Project Update Log",
         "",
-        f"> Last updated: {timestamp}",
-        "> Generated automatically by scripts/generate_commit_history.py",
+        f"_Last updated: {timestamp}_",
+        "",
+        "This page collects recent changes in plain language so anyone following the project can stay in the loop.",
         "",
     ]
 
     if not commits:
-        lines.append("No commits have been recorded yet.")
+        lines.append("No updates yet. As soon as changes are committed, a short summary will appear here.")
         lines.append("")
         return "\n".join(lines)
 
-    lines.extend(
-        [
-            "| Hash | Author | Date | Message |",
-            "| ---- | ------ | ---- | ------- |",
-        ]
-    )
+    lines.append("## Recent Highlights")
+    lines.append("")
+
     for short_hash, author, date, subject in commits:
+        readable_author = clean_text(author)
+        readable_subject = humanise_subject(subject)
         lines.append(
-            f"| `{short_hash}` | {normalise_cell(author)} | {normalise_cell(date)} | {normalise_cell(subject)} |"
+            f"- **{date}** — {readable_author}: {readable_subject} (reference `{short_hash}`)"
         )
+
+    lines.append("")
+    lines.append("Need more context? Feel free to reach out to the team or check the detailed commit on GitHub using the reference above.")
     lines.append("")
     return "\n".join(lines)
 
