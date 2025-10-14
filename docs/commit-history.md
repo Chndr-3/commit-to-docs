@@ -1,11 +1,13 @@
 # Project Update Log
 
-_Last updated: 2025-10-14 13:48:09 UTC_
+_Last updated: 2025-10-14 13:54:11 UTC_
 
 This page collects recent changes in plain language so anyone following the project can stay in the loop.
 
 ## Recent Highlights
 
+- **2025-10-14** — chandrawijaya: What's new: add initial README with project overview and setup instructions (reference `c68643f`)
+- **2025-10-14** — github-actions[bot]: Update commit history documentation (reference `845d83f`)
 - **2025-10-14** — chandrawijaya: Bug fix: update test content to ensure accurate representation (reference `52da2f4`)
 - **2025-10-14** — github-actions[bot]: Update commit history documentation (reference `96be87c`)
 - **2025-10-14** — chandrawijaya: Bug fix: correct content in test file to ensure accurate testing (reference `2aaebb0`)
