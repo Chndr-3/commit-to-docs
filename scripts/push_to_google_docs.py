@@ -77,11 +77,24 @@ def replace_document_body(service, doc_id: str, text: str) -> None:
     end_index = fetch_document_end_index(service, doc_id)
     requests = []
     if end_index > 1:
+        delete_end = max(1, end_index - 1)
+        if delete_end > 1:
+            requests.append(
+                {
+                    "deleteContentRange": {
+                        "range": {
+                            "startIndex": 1,
+                            "endIndex": delete_end,
+                        }
+                    }
+                }
+            )
         requests.append(
             {
                 "deleteContentRange": {
                     "range": {
                         "startIndex": 1,
+                        "endIndex": 2,
                     }
                 }
             }
