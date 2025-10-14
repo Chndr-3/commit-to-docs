@@ -75,22 +75,25 @@ def fetch_document_end_index(service, doc_id: str) -> int:
 
 def replace_document_body(service, doc_id: str, text: str) -> None:
     end_index = fetch_document_end_index(service, doc_id)
-    requests = [
-        {
-            "deleteContentRange": {
-                "range": {
-                    "startIndex": 1,
-                    "endIndex": end_index,
+    requests = []
+    if end_index > 1:
+        requests.append(
+            {
+                "deleteContentRange": {
+                    "range": {
+                        "startIndex": 1,
+                    }
                 }
             }
-        },
+        )
+    requests.append(
         {
             "insertText": {
                 "location": {"index": 1},
                 "text": text,
             }
-        },
-    ]
+        }
+    )
     service.documents().batchUpdate(documentId=doc_id, body={"requests": requests}).execute()
 
 
