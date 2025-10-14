@@ -73,33 +73,27 @@ def fetch_document_end_index(service, doc_id: str) -> int:
     return end_index
 
 
+def _invoke_batch(service, doc_id: str, requests: list[dict]) -> None:
+    service.documents().batchUpdate(documentId=doc_id, body={"requests": requests}).execute()
+
+
 def replace_document_body(service, doc_id: str, text: str) -> None:
     end_index = fetch_document_end_index(service, doc_id)
-    requests = []
-    if end_index > 1:
-        delete_end = max(1, end_index - 1)
-        if delete_end > 1:
-            requests.append(
-                {
-                    "deleteContentRange": {
-                        "range": {
-                            "startIndex": 1,
-                            "endIndex": delete_end,
-                        }
-                    }
-                }
-            )
-        requests.append(
+    delete_end = max(1, end_index - 1)
+
+    primary_requests: list[dict] = []
+    if delete_end > 1:
+        primary_requests.append(
             {
                 "deleteContentRange": {
                     "range": {
                         "startIndex": 1,
-                        "endIndex": 2,
+                        "endIndex": delete_end,
                     }
                 }
             }
         )
-    requests.append(
+    primary_requests.append(
         {
             "insertText": {
                 "location": {"index": 1},
@@ -107,7 +101,40 @@ def replace_document_body(service, doc_id: str, text: str) -> None:
             }
         }
     )
-    service.documents().batchUpdate(documentId=doc_id, body={"requests": requests}).execute()
+
+    try:
+        _invoke_batch(service, doc_id, primary_requests)
+        return
+    except HttpError as exc:
+        message = exc.content.decode("utf-8", errors="ignore") if hasattr(exc, "content") else str(exc)
+        if "Invalid requests" not in message:
+            raise
+
+    # Fallback: insert new text first, then remove the shifted old content.
+    fallback_requests: list[dict] = [
+        {
+            "insertText": {
+                "location": {"index": 1},
+                "text": text,
+            }
+        }
+    ]
+    if delete_end > 1:
+        new_start = len(text) + 1
+        new_end = len(text) + delete_end
+        if new_end > new_start:
+            fallback_requests.append(
+                {
+                    "deleteContentRange": {
+                        "range": {
+                            "startIndex": new_start,
+                            "endIndex": new_end,
+                        }
+                    }
+                }
+            )
+
+    _invoke_batch(service, doc_id, fallback_requests)
 
 
 def main() -> int:
