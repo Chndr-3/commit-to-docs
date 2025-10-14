@@ -1,0 +1,45 @@
+# Commit to Docs
+
+Simple tooling that turns your Git history into a readable update log, keeps `docs/commit-history.md` fresh, and (optionally) mirrors the same text into Google Docs.
+
+## How it works
+
+- `scripts/generate_commit_history.py` runs `git log` and writes a plain-English summary to `docs/commit-history.md`.
+- A GitHub Action (`.github/workflows/update-commit-history.yml`) runs on pushes to `main`/`master`, nightly at 03:00 UTC, or on demand. It regenerates the log and commits/pushes changes automatically.
+- If the secrets `GOOGLE_DOC_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` exist, the workflow (or a local run of `scripts/push_to_google_docs.py`) also updates the linked Google Doc.
+
+## Getting started
+
+```bash
+git clone https://github.com/Chndr-3/commit-to-docs.git
+cd commit-to-docs
+python3 scripts/generate_commit_history.py
+```
+
+You’ll find the latest summary in `docs/commit-history.md`.
+
+## Google Docs setup (optional)
+
+1. Enable the Google Docs API and create a service account.  
+2. Share the target Google Doc with the service account email.  
+3. Add repo secrets:
+   - `GOOGLE_DOC_ID` – from the doc URL (`/d/<id>/`).
+   - `GOOGLE_SERVICE_ACCOUNT_JSON` – service account key JSON (raw or base64).
+
+Local test:
+
+```bash
+pip install google-api-python-client google-auth-httplib2
+export GOOGLE_DOC_ID="<doc-id>"
+export GOOGLE_SERVICE_ACCOUNT_JSON="$(base64 -i path/to/service-account.json)"
+python3 scripts/generate_commit_history.py
+python3 scripts/push_to_google_docs.py
+```
+
+Need more detail? Check `docs/google-docs-sync.md`.
+
+## Handy tips
+
+- Pull with `git pull --rebase origin master` (or `main`) to keep history clean.  
+- Regenerate the log before pushing so the workflow doesn’t create extra commits.  
+- The workflow uses the default `GITHUB_TOKEN`; no extra PAT needed.
